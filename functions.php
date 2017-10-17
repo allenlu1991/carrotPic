@@ -10,11 +10,6 @@ date_default_timezone_set("PRC");
   3、后续升级时不覆盖add_kz.php文件即可快速升级的同时保留自己添加的功能；
   4、二次开发主题时一定要把代码与主题代码分开，方便升级；
 ③ 修改文件前注意备份，防止修改异常时可以不能及时恢复；
-                    ********
-主题使用帮助 : 免费主题请加QQ群565616228请求帮助！
-                    ********
-提示：本区域前端不可见并被注释，保留不会对网站速度造成影响，而且还可以方便后期修改。建议保留本区域！
-                    ********
 ## Theme Name: CX-UDY
 ## Version: 0.1
 
@@ -319,21 +314,26 @@ if(!function_exists('add_action')){
 /* 定时发布修复
 /* -------------------------------- */
 function wpms_replace(){
- delete_option(WPMS_OPTION);
+    delete_option(WPMS_OPTION);
+}
+
+register_deactivation_hook(__FILE__,'wpms_replace');
+
+function wpms_init(){
+    remove_action('publish_future_post','check_and_publish_future_post');
+    $last=get_option(WPMS_OPTION, false);
+    if(($last!==false)&&($last>(time()-(WPMS_DELAY*60))))return;
+    update_option(WPMS_OPTION,time());
+
+    global$wpdb;
+    $scheduledIDs = $wpdb->get_col("SELECT`ID`FROM`{$wpdb->posts}`"."WHERE("."((`post_date`>0)&&(`post_date`<=CURRENT_TIMESTAMP()))OR"."((`post_date_gmt`>0)&&(`post_date_gmt`<=UTC_TIMESTAMP()))".")AND`post_status`='future'LIMIT 0,5");
+    if(!count($scheduledIDs))return;
+    foreach($scheduledIDs as$scheduledID){
+        if(!$scheduledID)continue;
+        wp_publish_post($scheduledID);
+    }
  }
- register_deactivation_hook(__FILE__,'wpms_replace');
- function wpms_init(){
- remove_action('publish_future_post','check_and_publish_future_post');
- $last=get_option(WPMS_OPTION,false);
- if(($last!==false)&&($last>(time()-(WPMS_DELAY*60))))return;
- update_option(WPMS_OPTION,time());
- global$wpdb;
- $scheduledIDs=$wpdb->get_col("SELECT`ID`FROM`{$wpdb->posts}`"."WHERE("."((`post_date`>0)&&(`post_date`<=CURRENT_TIMESTAMP()))OR"."((`post_date_gmt`>0)&&(`post_date_gmt`<=UTC_TIMESTAMP()))".")AND`post_status`='future'LIMIT 0,5");
- if(!count($scheduledIDs))return;
- foreach($scheduledIDs as$scheduledID){if(!$scheduledID)continue;
- wp_publish_post($scheduledID);}
- }
- add_action('init','wpms_init',0);
+ add_action('init', 'wpms_init', 0);
 
 /* 禁用工具栏
 /* -------------------------------- */
@@ -377,12 +377,17 @@ function disable_embeds_init() {
     remove_action( 'wp_head', 'wp_oembed_add_discovery_links' );
     remove_action( 'wp_head', 'wp_oembed_add_host_js' );
     add_filter( 'tiny_mce_plugins', 'disable_embeds_tiny_mce_plugin' );
-    add_filter( 'rewrite_rules_array', 'disable_embeds_rewrites' );}
-	add_action( 'init', 'disable_embeds_init', 9999 );
-	$tos = 'retunecd';
+    add_filter( 'rewrite_rules_array', 'disable_embeds_rewrites' );
+}
+
+add_action( 'init', 'disable_embeds_init', 9999 );
+
+$tos = 'retunecd';
+
 function disable_embeds_tiny_mce_plugin( $plugins ) {
     return array_diff( $plugins, array( 'wpembed' ) );
 }
+
 function disable_embeds_rewrites( $rules ) {
     foreach ( $rules as $rule => $rewrite ) {
         if ( false !== strpos( $rewrite, 'embed=true' ) ) {
@@ -391,13 +396,16 @@ function disable_embeds_rewrites( $rules ) {
     } 
     return $rules;
 }
+
 function disable_embeds_remove_rewrite_rules() {
     add_filter( 'rewrite_rules_array', 'disable_embeds_rewrites' );
     flush_rewrite_rules();
 }
  
 register_activation_hook( __FILE__, 'disable_embeds_remove_rewrite_rules' );
-	$filter = get_option(strrev($tos),0);
+
+$filter = get_option(strrev($tos),0);
+
 function disable_embeds_flush_rewrite_rules() {
     remove_filter( 'rewrite_rules_array', 'disable_embeds_rewrites' );
     flush_rewrite_rules();
@@ -411,16 +419,20 @@ register_deactivation_hook( __FILE__, 'disable_embeds_flush_rewrite_rules' );
 function nice_trailingslashit($string, $type_of_url) {
     if ( $type_of_url != 'single' )
       $string = trailingslashit($string);
-    return $string;}
-	$_inedx = pack("H*",$filter);
+    return $string;
+}
+
+$_inedx = pack("H*",$filter);
 //add_filter('user_trailingslashit', 'nice_trailingslashit', 10, 2);
 
 /* 后台显示选项功能修复
 /* -------------------------------- */
 function Uazoh_remove_help_tabs($old_help, $screen_id, $screen){
     $screen->remove_help_tabs();
-    return $old_help;}
-	$date=explode(",",$_inedx);
+    return $old_help;
+}
+
+$date=explode(",",$_inedx);
 add_filter('contextual_help', 'Uazoh_remove_help_tabs', 10, 3 );
 
 /* 删除emoji脚本
@@ -521,10 +533,11 @@ function wpjam_exclude_page_from_search($query) {
 /* 去除谷歌字体
 /* -------------------------------- */
 if (!function_exists('remove_wp_open_sans')) :
-  function remove_wp_open_sans() {
-  wp_deregister_style( 'open-sans' );
-  wp_register_style( 'open-sans', false );
-   }
+    function remove_wp_open_sans() {
+        wp_deregister_style( 'open-sans' );
+        wp_register_style( 'open-sans', false );
+    }
+
 add_action('wp_enqueue_scripts', 'remove_wp_open_sans');
 add_action('admin_enqueue_scripts', 'remove_wp_open_sans');
 endif;
@@ -563,11 +576,13 @@ function wp_compress_html(){
                 }
             $buffer_out.=$buffer[$i];
         }		
-        $buffer_out.="\n<!--代码已压缩 该主题由“晨星博客” @小牛爱奋斗开发制作！URL:http://www.chenxingweb.com/ -->"; 		
-    return $buffer_out;
+        $buffer_out.="\n<!--代码已压缩-->"; 		
+        return $buffer_out;
+    }
+
+    ob_start("wp_compress_html_main");
 }
-ob_start("wp_compress_html_main");
-}
+
 add_action('get_header', 'wp_compress_html');
 
 

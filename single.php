@@ -26,20 +26,13 @@ while ( have_posts() ) : the_post();
 				 <i class="fa fa-comment"></i> <span><?php comments_popup_link( '0', '1', '%' ); ?></span> 评论 / 
 				 <i class="fa fa-clock-o"></i> <span><?php the_time('Y-n-j');?></span> 发布
 			 </div>
-			<div class="post_au"> Author：<?php the_author_posts_link();?></div>
+			<div class="post_au"> 作者：<?php the_author_posts_link();?></div>
 		  </div>
-		  <!--AD id:single_1002-->
-		  <div class="affs">
-			 <a href="http://www.chenxingweb.com/wordpress-image-theme-wp-pic.html">
-				<img src="http://a.chenxingweb.com/acxd/gg-index-themes-images-1.jpg" width="820" height="150">
-			 </a>
-		  </div>
-		   <!--AD.end-->
 		  <div class="content">
 			<div class="content_left">
 				<?php the_content();?>
 			  <div class="tag cl">
-				<div class="single-tags-title"> Tags： </div>
+				<div class="single-tags-title"> 标签： </div>
 				  <div class="single-tags"><?php the_tags('','',''); ?></div> 
 				  <span class="post-like">
 				  <a href="javascript:;" data-action="ding" data-id="<?php the_ID(); ?>" class="favorite<?php if(isset($_COOKIE['bigfa_ding_'.$post->ID])) echo ' done';?>">
