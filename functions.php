@@ -118,6 +118,12 @@ function user_register_func(WP_REST_Request $request) {
     }elseif (empty($parameters['password'])) {
         $result['code'] = 106;
         $result['message'] = "密码不能为空";
+    }elseif ( !is_email($parameters['email']) ) {
+        $result['code'] = 104;
+        $result['message'] = "邮箱格式错误，请核对";
+    }elseif ( !validate_username($parameters['username']) ) {
+        $result['code'] = 101;
+        $result['message'] = "用户名格式错误，仅支持英文字符";
     }else {
         $user_register = wp_insert_user( $info );
         if ( is_wp_error($user_register) ){ 
@@ -133,7 +139,7 @@ function user_register_func(WP_REST_Request $request) {
             }
             elseif (in_array('user_login_too_long',$error) || in_array('invalid_username',$error) || in_array('user_nicename_too_long',$error)) {
                 $result['code'] = 101;
-                $result['message'] = "用户名格式有误，请核对";
+                $result['message'] = "用户名格式错误，仅支持英文字符";
             }
             elseif(in_array('existing_user_email',$error)) {
                 $result['code'] = 105;
@@ -155,24 +161,12 @@ function user_register_func(WP_REST_Request $request) {
     }
 
     return $result;
-    // $posts = get_posts( array(
-    //     'author' => $data['id'],
-    // ) );
-
-    // if ( empty( $posts ) ) {
-    //     return new WP_Error( 'awesome_no_author', 'Invalid author', array( 'status' => 404 ) );
-    // }
-
-    // return $posts[0]->post_title;
 }
 
 add_action( 'rest_api_init', function () {
   register_rest_route( 'wp/v2', '/users/register', array(
     'methods' => 'POST',
-    'callback' => 'user_register_func',
-    // 'permission_callback' => function () {
-    //   return current_user_can( 'edit_others_posts' );
-    // }
+    'callback' => 'user_register_func'
   ) );
 } );
 
