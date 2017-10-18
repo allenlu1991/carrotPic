@@ -769,33 +769,37 @@ register_nav_menus(
    )
 );
 
-/* 幻灯片模块
+/* 轮播图模块
 /* -------------------------------- */
 $slider = cx_options('_cx_slider');
 if(isset($slider) && $slider == 'off'){
-add_action('init', 'ashu_post_type');
-add_filter( 'manage_edit-slider_type_columns', 'slider_type_custom_columns' );
-add_action( 'manage_slider_type_posts_custom_column', 'slider_type_manage_custom_columns', 10, 2 );
+    add_action('init', 'ashu_post_type');
+    //Filter：manage_edit-${post_type}_columns 
+    add_filter( 'manage_edit-slider_type_columns', 'slider_type_custom_columns' );
+    //Action: manage_{$post_type}_posts_custom_column 
+    add_action( 'manage_slider_type_posts_custom_column', 'slider_type_manage_custom_columns', 10, 2 );
 }
+
 function ashu_post_type() {
     register_post_type( 'slider_type',
         array(
             'labels' => array(
-                 'name' => '幻灯片',
-                'singular_name' => '幻灯片',
+                'name' => '轮播图',
+                'singular_name' => '轮播图',
                 'add_new' => '添加',
-                'add_new_item' => '添加新幻灯片',
-                'edit_item' => '编辑幻灯片',
-                'new_item' => '新幻灯片'
+                'add_new_item' => '添加新轮播图',
+                'edit_item' => '编辑轮播图',
+                'new_item' => '新轮播图'
             ),
         'public' => true,
         'has_archive' => false,
         'exclude_from_search' => true,
         'menu_position' => 8,
-        'supports' => array( 'title')
+        'supports' => array('title')
         )
     );
 }
+
 //2. 修改幻灯片文章列表
 function slider_type_custom_columns( $columns ) {
     $columns = array(
@@ -806,6 +810,7 @@ function slider_type_custom_columns( $columns ) {
     );
     return $columns;
 }
+
 function slider_type_manage_custom_columns( $column, $post_id ) {
     global $post;
     switch( $column ) {
