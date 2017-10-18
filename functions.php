@@ -94,6 +94,93 @@ function script_parameter(){
 /**                                         主题核心代码.end                                            **/
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/* 处理REST API
+/* ----------------------------- */
+
+function user_register_func(WP_REST_Request $request) {
+    $parameters = $request->get_body_params();
+
+    $info = array();
+    $info['user_nicename'] = $info['nickname'] = $info['display_name'] = $info['first_name'] = $info['user_login'] = sanitize_user($parameters['username']) ;
+    $info['user_pass'] = sanitize_text_field($parameters['password']);
+    $info['user_email'] = sanitize_email( $parameters['email']);
+    $info['role'] = 'subscriber';
+
+    // Register the user
+    $result = array();
+
+    if(empty($parameters['username'])) {
+        $result['code'] = 100;
+        $result['message'] = "用户名不能为空";
+    }elseif (empty($parameters['email'])) {
+        $result['code'] = 103;
+        $result['message'] = "邮箱不能为空";
+    }elseif (empty($parameters['password'])) {
+        $result['code'] = 106;
+        $result['message'] = "密码不能为空";
+    }else {
+        $user_register = wp_insert_user( $info );
+        if ( is_wp_error($user_register) ){ 
+            $error  = $user_register->get_error_codes() ;
+            
+            if(in_array('empty_user_login', $error)) {
+                $result['code'] = 100;
+                $result['message'] = "用户名不能为空";
+            }
+            elseif(in_array('existing_user_login',$error)) {
+                $result['code'] = 102;
+                $result['message'] = "用户名已被注册，请更换";
+            }
+            elseif (in_array('user_login_too_long',$error) || in_array('invalid_username',$error) || in_array('user_nicename_too_long',$error)) {
+                $result['code'] = 101;
+                $result['message'] = "用户名格式有误，请核对";
+            }
+            elseif(in_array('existing_user_email',$error)) {
+                $result['code'] = 105;
+                $result['message'] = "邮箱已被注册，请更换";
+            }else {
+                $result['code'] = 108;
+                $result['message'] = "其他错误";
+                var_dump($error);
+            }
+        } else {
+            $result['code'] = 0;
+            $result['message'] = "注册成功";
+            $result['data'] = array(
+                'id' => $user_register,
+                'username' => $info['user_login'],
+                'email' => $info['user_email']
+            );  
+        }
+    }
+
+    return $result;
+    // $posts = get_posts( array(
+    //     'author' => $data['id'],
+    // ) );
+
+    // if ( empty( $posts ) ) {
+    //     return new WP_Error( 'awesome_no_author', 'Invalid author', array( 'status' => 404 ) );
+    // }
+
+    // return $posts[0]->post_title;
+}
+
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'wp/v2', '/users/register', array(
+    'methods' => 'POST',
+    'callback' => 'user_register_func',
+    // 'permission_callback' => function () {
+    //   return current_user_can( 'edit_others_posts' );
+    // }
+  ) );
+} );
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**                                          
+REST API接口核心代码.end                                            **/
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /* 调用整合
 /* -------------------------------- */
 function cx_options($options='',$echo= 0) {	
