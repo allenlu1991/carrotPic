@@ -95,8 +95,8 @@ $slider_boxinfo = array(
 );
 
 $slider_metas[] = array(
-  'name' => '指向图集ID',
-  'desc' => '以<code>http://</code>开头 例：http://www.chenxingweb.com',
+  'name' => '指向图集ID或链接',
+  'desc' => 'POST ID 或 以<code>http://</code>开头 例：http://www.carrot.im',
   'id' => '_slider_link',
   'size'=> 40,
   'std'=>'',

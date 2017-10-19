@@ -17,15 +17,20 @@ class ashuwp_postmeta_feild extends ashuwp_framework_core {
   function __construct($ashu_meta, $meta_conf) {
     $this->ashu_meta = $ashu_meta;
     $this->meta_conf = $meta_conf;
-	
+
+    //add_aciton在类中使用，回调函数须使用数组形式array($this, 'calss_method')，&$this只是为了兼容PHP5.2以下
+    //admin_menu hook: Fires before the administration menu loads in the admin.
     add_action('admin_menu', array(&$this, 'init_boxes'));
+
+    //save_post Hook: Fires once a post has been saved.
     add_action('save_post', array(&$this, 'save_postdata'));
+
+    //admin_enqueue_scripts Hook: Enqueue scripts for all admin pages.
     add_action( 'admin_enqueue_scripts', array(&$this, 'enqueue_css_js') );
   }
   
   public function init_boxes() {
     $this->create_meta_box();
-    
   }
   
   public function create_meta_box(){
@@ -59,6 +64,7 @@ class ashuwp_postmeta_feild extends ashuwp_framework_core {
     }  
   }
   
+  //创建元数据框中的内容
   public function new_meta_boxes(){
     if(isset($_GET['post']))
       $post_id = $_GET['post'];
@@ -74,11 +80,14 @@ class ashuwp_postmeta_feild extends ashuwp_framework_core {
           $this->{$ashu_meta['type']}($ashu_meta);
           continue;
         }
+
+        //如果$_GET['post']攒在则获取值填充
         $meta_value = get_post_meta($post_id, $ashu_meta['id'], true);
         
         if($meta_value != "")
           $ashu_meta['std'] = $meta_value;
         
+        //{$ashu_meta['type']}是父类的方法：text(), upload()等
         $this->{$ashu_meta['type']}($ashu_meta);
         
       }
