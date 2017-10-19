@@ -774,9 +774,9 @@ register_nav_menus(
 $slider = cx_options('_cx_slider');
 if(isset($slider) && $slider == 'off'){
     add_action('init', 'ashu_post_type');
-    //Filter：manage_edit-${post_type}_columns 
+    //Filter：manage_edit-${post_type}_columns 修改列表标题
     add_filter( 'manage_edit-slider_type_columns', 'slider_type_custom_columns' );
-    //Action: manage_{$post_type}_posts_custom_column 
+    //Action: manage_{$post_type}_posts_custom_column 控制内容显示
     add_action( 'manage_slider_type_posts_custom_column', 'slider_type_manage_custom_columns', 10, 2 );
 }
 
@@ -803,9 +803,9 @@ function ashu_post_type() {
 //2. 修改幻灯片文章列表
 function slider_type_custom_columns( $columns ) {
     $columns = array(
-		'title' => '幻灯片名',
-        'linked' => '链接到',
-        'thumbnail' => '幻灯片预览',
+		'title' => '轮播图名',
+        'linked' => '指向图集ID',
+        'thumbnail' => '轮播图预览',
         'date' => '日期'
     );
     return $columns;

@@ -83,17 +83,26 @@ $ashu_feild[] = array(
 $ashuwp_termmeta_feild = new ashuwp_termmeta_feild($ashu_feild, $taxonomy_cof);
 
 /**
-自定义幻灯片
+自定义轮播图
 **/
-$slider_boxinfo = array('title' => '填写幻灯片信息', 'id'=>'sliderbox', 'page'=>array('slider_type'), 'context'=>'normal', 'priority'=>'low', 'callback'=>'');
+$slider_boxinfo = array(
+  'title' => '填写轮播图信息', 
+  'id'=>'sliderbox', 
+  'page'=>array('slider_type'), 
+  'context'=>'normal', 
+  'priority'=>'low', 
+  'callback'=>''
+);
+
 $slider_metas[] = array(
-  'name' => '幻灯片链接',
+  'name' => '指向图集ID',
   'desc' => '以<code>http://</code>开头 例：http://www.chenxingweb.com',
   'id' => '_slider_link',
   'size'=> 40,
   'std'=>'',
   'type' => 'text'
 );
+
 $slider_metas[] = array(
   'name' => '幻灯片图片',
   'desc' => '上传一张幻灯片显示图像',
@@ -103,6 +112,7 @@ $slider_metas[] = array(
   'id' => '_slider_pic',
   'type' => 'upload'
 );
+
 $ashuwp_slider = new ashuwp_postmeta_feild($slider_metas, $slider_boxinfo);
 
 /**
