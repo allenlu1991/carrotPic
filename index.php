@@ -13,7 +13,7 @@ get_header();
 /** 调用首页幻灯片 **/
 $slider = cx_options('_cx_slider');
 if(isset($slider) && $slider == 'off')
-cx__template('hdp');
+	cx__template('hdp');
 ?>
 
 	<div class="home-filter">	

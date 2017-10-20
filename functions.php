@@ -163,10 +163,55 @@ function user_register_func(WP_REST_Request $request) {
     return $result;
 }
 
+function get_slides_func() {
+    //全局变量必须声明
+    global $post;
+    $result = array();
+
+    $showposts = cx_options('_cx_slider_num');
+
+    $args = array(
+        'post_type'=>'slider_type',
+        'orderby'=>'menu_order',
+        'showposts'=>$showposts
+    );
+
+    query_posts($args);
+
+    // 主循环
+    if ( have_posts() ) :
+        while ( have_posts() ) : 
+            the_post();
+
+            $slider_pic = get_post_meta($post->ID,'_slider_pic',true);
+            $slider_link = get_post_meta($post->ID,'_slider_link',true);
+            
+            $result[] = array(
+                'id' => $post->ID,
+                'name' => $post->post_title, 
+                'image_url' => $slider_pic,
+                'post_id' => intval($slider_link)
+            );
+        endwhile; 
+    endif;
+
+    // 重置query
+    wp_reset_query();
+
+    return $result;
+}
+
 add_action( 'rest_api_init', function () {
   register_rest_route( 'wp/v2', '/users/register', array(
     'methods' => 'POST',
     'callback' => 'user_register_func'
+  ) );
+} );
+
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'wp/v2', '/slides', array(
+    'methods' => 'GET',
+    'callback' => 'get_slides_func'
   ) );
 } );
 
@@ -804,7 +849,7 @@ function ashu_post_type() {
 function slider_type_custom_columns( $columns ) {
     $columns = array(
 		'title' => '轮播图名',
-        'linked' => '指向图集ID',
+        'linked' => '指向图集ID或链接',
         'thumbnail' => '轮播图预览',
         'date' => '日期'
     );
@@ -983,6 +1028,7 @@ function pic_total() {
 
 /* 文章点赞代码
 /* -------------------------------- */
+//处理没有登录用户的ajax请求
 add_action('wp_ajax_nopriv_bigfa_like', 'bigfa_like');
 add_action('wp_ajax_bigfa_like', 'bigfa_like');
 function bigfa_like(){
