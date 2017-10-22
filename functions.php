@@ -201,6 +201,271 @@ function get_slides_func() {
     return $result;
 }
 
+//累计字段值
+
+function post_num_cumulation($post_id, $num, $field_name) {
+
+    if (!$num || !is_numeric($num)) {
+        update_post_meta($post_id, $field_name, 1);
+    }
+    else {
+        update_post_meta($post_id, $field_name, ($num + 1));
+    }
+
+}
+
+function post_num_decrease($post_id, $num, $field_name) {
+
+    if (!$num || !is_numeric($num) || ($num <= 1) ) {
+        update_post_meta($post_id, $field_name, 0);
+    }
+    else {
+        update_post_meta($post_id, $field_name, ($num - 1));
+    }
+
+}
+
+function like_func(){
+    global $wpdb, $post, $current_user;
+    $result = array();
+
+    $id = is_numeric($_POST["post_id"]) ? intval($_POST["post_id"]) : false;
+    $action = $_POST["action"];
+    
+    if ( $action == 'like' && $id != false ) {
+
+        $like_raters = get_post_meta($id,"like_num",true);
+        $like_users_str = get_post_meta($id, 'like_users', true);
+        $like_users_arr = !empty($like_users_str) ? maybe_unserialize($like_users_str) : array();
+
+        if (empty($like_users_arr)) {
+            $like_users_arr[] = $current_user->data->ID;
+            update_post_meta($id, 'like_users', maybe_serialize($like_users_arr));
+
+            //累计值
+            post_num_cumulation($id, $like_raters, 'like_num');
+
+            $result['code'] = 0;
+            $result['message'] = "喜欢成功";
+
+        }
+        elseif (!in_array($current_user->data->ID, $like_users_arr)) {
+            
+            $new_like_users_arr = array_merge($like_users_arr, array($current_user->data->ID));
+            update_post_meta($id, 'like_users', maybe_serialize($new_like_users_arr));
+
+            //累计值
+            post_num_cumulation($id, $like_raters, 'like_num');
+
+            $result['code'] = 0;
+            $result['message'] = "喜欢成功";
+
+        }
+        else {
+            $result['code'] = 100;
+            $result['message'] = "不可重复喜欢";
+        }
+    }
+    else {
+        $result['code'] = 200;
+        $result['message'] = "参数错误";
+    }
+    
+    return $result;
+}
+
+function user_collects_info_update($user_id, $post_id, $action) {
+
+    $collect_posts = get_user_meta($user_id,"collect_posts",true);
+    $collect_posts = !empty($collect_posts) ? maybe_unserialize($collect_posts) : array();
+
+    switch ($action) {
+        case 'add':
+            if( empty($collect_posts) || !in_array($post_id, $collect_posts) ) {
+                $collect_posts[] = $post_id;
+                update_user_meta($user_id, 'collect_posts', maybe_serialize($collect_posts));
+            }
+            break;
+        case 'remove':
+            if( in_array($post_id, $collect_posts) ) {
+
+                $index = array_search($post_id, $collect_posts);
+                array_splice($collect_posts, $index, 1);//返回的是提取的元素
+                update_user_meta($user_id, 'collect_posts', maybe_serialize($collect_posts));
+            }
+            break;
+    }
+}
+
+function get_collect_func() {
+    global $current_user;
+    $result = array();
+
+    $collect_posts = get_user_meta($current_user->data->ID,"collect_posts",true);
+    $collect_posts = !empty($collect_posts) ? maybe_unserialize($collect_posts) : array();
+
+    if(!empty($collect_posts)) {
+        $result = get_posts( array(
+            'include' => $collect_posts, 
+        ) );
+    }
+
+    return $collect_posts;
+}
+
+function collect_func(){
+    global $wpdb, $post, $current_user;
+    $result = array();
+
+    $id = is_numeric($_POST["post_id"]) ? intval($_POST["post_id"]) : false;
+    $action = $_POST["action"];
+    
+    if ( $action == 'collect' && $id != false ) {
+
+        $collect_num = get_post_meta($id,"collect_num",true);
+        $collect_users = get_post_meta($id, 'collect_users', true);
+
+
+        $collect_users = !empty($collect_users) ? maybe_unserialize($collect_users) : array();
+
+        if (empty($collect_users)) {
+            $collect_users[] = $current_user->data->ID;
+            update_post_meta($id, 'collect_users', maybe_serialize($collect_users));
+
+            //累计值
+            post_num_cumulation($id, $collect_num, 'collect_num');
+
+            //更新user_meta表
+            user_collects_info_update($current_user->data->ID, $id, 'add');
+
+            $result['code'] = 0;
+            $result['message'] = "收藏成功";
+
+        }
+        elseif (!in_array($current_user->data->ID, $collect_users)) {
+            
+            $new_collect_users = array_merge($collect_users, array($current_user->data->ID));
+            update_post_meta($id, 'collect_users', maybe_serialize($new_collect_users));
+
+            //累计值
+            post_num_cumulation($id, $collect_num, 'collect_num');
+
+            //更新user_meta表
+            user_collects_info_update($current_user->data->ID, $id, 'add');
+
+            $result['code'] = 0;
+            $result['message'] = "收藏成功";
+
+        }
+        else {
+            $result['code'] = 100;
+            $result['message'] = "不可重复收藏";
+        }
+    }
+    elseif ( $action == 'uncollect' && $id != false ) {
+        
+        $collect_num = get_post_meta($id,"collect_num",true);
+        $collect_users = get_post_meta($id, 'collect_users', true);
+
+
+        $collect_users = !empty($collect_users) ? maybe_unserialize($collect_users) : array();
+
+        if ( empty($collect_users) || !in_array($current_user->data->ID, $collect_users) ) {
+
+            $result['code'] = 100;
+            $result['message'] = "没有收藏该内容";
+
+        }
+        else {
+
+            $index = array_search($current_user->data->ID, $collect_users);
+
+            array_splice($collect_users, $index, 1);//返回的是提取的元素
+
+            update_post_meta($id, 'collect_users', maybe_serialize($collect_users));
+
+            //累计值
+            post_num_decrease($id, $collect_num, 'collect_num');
+
+            //更新user_meta表
+            user_collects_info_update($current_user->data->ID, $id, 'remove');
+
+            $result['code'] = 0;
+            $result['message'] = "取消收藏";
+        }
+
+    }
+    else{
+        $result['code'] = 200;
+        $result['message'] = "参数错误";
+    }
+    
+    return $result;
+}
+
+function get_post_meta_info($post_arr) {
+    $meta_info = array();
+    $picture_urls = array();
+
+    $like_nums = get_post_meta($post_arr['id'], "like_num", true);
+    $like_nums = !empty($like_nums) ? $like_nums : 0;
+
+    $media_info = get_attached_media( 'image', $post_arr['id']);
+
+    foreach ($media_info as $key => $obj) {
+        $picture_urls[] = $obj->guid;
+    }
+
+    $meta_info['like_num'] = (int) $like_nums;
+    $meta_info['pictures_num'] = count($media_info);
+
+    $meta_info['pictures_url'] = $picture_urls;
+
+    return $meta_info;
+}
+
+function post_add_info() {
+    register_rest_field( 'post', 'meta_info', array(
+        'get_callback' => 'get_post_meta_info',
+        'schema' => null,
+    ) );
+}
+
+function get_user_avatar_info($user_arr) {
+    $avatar_info = array();
+
+    $avatar_id = get_user_meta($user_arr['id'], "ct_user_avatar", true);
+
+    if(!empty($avatar_id)) {
+        $avater_attachment = wp_get_attachment_image_src( $avatar_id, 'medium' );
+
+        if($avater_attachment) {
+            $avatar_info['code'] = 0;
+            $avatar_info['url'] = $avater_attachment[0];
+        }
+        else {
+            $avatar_info['code'] = 100;
+            $avatar_info['url'] = '头像附件不存在';
+        }
+    }
+    else {
+        $avatar_info['code'] = 101;
+        $avatar_info['url'] = '没有设置头像';
+    }
+
+    return $avatar_info;
+}
+
+function user_add_avatar() {
+    register_rest_field( 'user', 'avatar', array(
+        'get_callback' => 'get_user_avatar_info',
+        'schema' => null,
+    ) );
+}
+
+
+//初始化REST
+
 add_action( 'rest_api_init', function () {
   register_rest_route( 'wp/v2', '/users/register', array(
     'methods' => 'POST',
@@ -214,6 +479,60 @@ add_action( 'rest_api_init', function () {
     'callback' => 'get_slides_func'
   ) );
 } );
+
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'wp/v2', '/like', array(
+    'methods' => 'POST',
+    'callback' => 'like_func',
+    'permission_callback' => function () {
+            return is_user_logged_in();
+    },
+  ) );
+} );
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'wp/v2', '/collects', array(
+        'methods' => 'GET',
+        'callback' => 'get_collect_func',
+        'permission_callback' => function () {
+                return is_user_logged_in();
+        },
+    ) );
+
+    register_rest_route( 'wp/v2', '/collects', array(
+        'methods' => 'POST',
+        'callback' => 'collect_func',
+        'permission_callback' => function () {
+                return is_user_logged_in();
+        },
+    ) );
+
+} );
+
+add_action( 'rest_api_init', 'post_add_info' );
+
+add_action( 'rest_api_init', 'user_add_avatar' );
+
+// add_action( 'rest_api_init', 'create_api_posts_meta_field' );
+ 
+// function create_api_posts_meta_field() {
+ 
+//     // register_rest_field ( 'name-of-post-type', 'name-of-field-to-return', array-of-callbacks-and-schema() )
+//     register_rest_field( 'post', 'post-meta-fields', array(
+//            'get_callback'    => 'get_post_meta_for_api',
+//            'schema'          => null,
+//         )
+//     );
+// }
+ 
+// function get_post_meta_for_api( $object ) {
+//     //get the id of the post object array
+//     $post_id = $object['id'];
+ 
+//     //return the post meta
+//     return get_post_meta($post_id, "like_num", true);
+//     // return get_post_meta( $post_id );
+// }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**                                          
@@ -1028,25 +1347,27 @@ function pic_total() {
 
 /* 文章点赞代码
 /* -------------------------------- */
-//处理没有登录用户的ajax请求
+//wp_ajax_nopriv_{$_REQUEST[‘action’]} 处理没有登录用户的ajax请求 
 add_action('wp_ajax_nopriv_bigfa_like', 'bigfa_like');
+//wp_ajax_{$_REQUEST[‘action’]}
 add_action('wp_ajax_bigfa_like', 'bigfa_like');
 function bigfa_like(){
     global $wpdb,$post;
     $id = $_POST["um_id"];
     $action = $_POST["um_action"];
+
     if ( $action == 'ding'){
-    $bigfa_raters = get_post_meta($id,'bigfa_ding',true);
-    $expire = time()+3600*24;
-    $domain = ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
-    setcookie('bigfa_ding_'.$id,$id,$expire,'/',$domain,false);
-    if (!$bigfa_raters || !is_numeric($bigfa_raters)) {
-        update_post_meta($id, 'bigfa_ding', 1);
-    }
-    else {
-            update_post_meta($id, 'bigfa_ding', ($bigfa_raters + 1));
+        $bigfa_raters = get_post_meta($id,'bigfa_ding',true);
+        $expire = time()+3600*24;
+        $domain = ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
+        setcookie('bigfa_ding_'.$id,$id,$expire,'/',$domain,false);
+        if (!$bigfa_raters || !is_numeric($bigfa_raters)) {
+            update_post_meta($id, 'bigfa_ding', 1);
         }
-    echo get_post_meta($id,'bigfa_ding',true);
+        else {
+                update_post_meta($id, 'bigfa_ding', ($bigfa_raters + 1));
+            }
+        echo get_post_meta($id,'bigfa_ding',true);
     }
     die;
 }
