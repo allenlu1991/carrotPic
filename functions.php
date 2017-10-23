@@ -297,6 +297,38 @@ function user_collects_info_update($user_id, $post_id, $action) {
     }
 }
 
+function manage_meta_info($type, $type_id, $field_name, $value, $action) {
+    switch ($type) {
+        case 'user':
+            $get_meta_func = 'get_user_meta';
+            $update_meta_func = 'update_user_meta';
+            break;
+        case 'post':
+            $get_meta_func = 'get_post_meta';
+            $update_meta_func = 'update_post_meta';
+            break;
+    }
+
+    $field_values = $get_meta_func($type_id, $field_name, true);
+    $field_values = !empty($field_values) ? maybe_unserialize($field_values) : array();
+
+    switch ($action) {
+        case 'add':
+            if( empty($field_values) || !in_array($value, $field_values) ) {
+                $field_values[] = $value;
+                return $update_meta_func($type_id, $field_name, maybe_serialize($field_values));
+            }
+            break;
+        case 'remove':
+            if( in_array($value, $field_values) ) {
+                $index = array_search($value, $field_values);
+                array_splice($field_values, $index, 1);//返回的是提取的元素
+                return $update_meta_func($type_id, $field_name, maybe_serialize($field_values));
+            }
+            break;
+    }
+}
+
 function get_collect_func() {
     global $current_user;
     $result = array();
@@ -463,6 +495,52 @@ function user_add_avatar() {
     ) );
 }
 
+function get_follows_func() {
+    global $current_user;
+
+    $follow_users = get_user_meta($current_user->data->ID,"follow_users",true);
+    $follow_users = !empty($follow_users) ? maybe_unserialize($follow_users) : array();
+
+    return $follow_users;
+}
+
+function follow_func(){
+    global $wpdb, $post, $current_user;
+    $result = array();
+
+    $id = is_numeric($_POST["follow_user_id"]) ? intval($_POST["follow_user_id"]) : false;
+    $action = $_POST["action"];
+    
+    if ( $action == 'follow' && $id != false ) {
+        
+        //粉丝id中添加博主id
+        manage_meta_info('user', $current_user->data->ID, 'follow_users', $id, 'add');
+
+        //博主id中添加粉丝id
+        manage_meta_info('user', $id, 'followers', $current_user->data->ID, 'add');
+
+        $result['code'] = 0;
+        $result['message'] = "关注成功";
+    }
+    elseif ( $action == 'unfollow' && $id != false ) {
+ 
+        //粉丝id中删除博主id
+        manage_meta_info('user', $current_user->data->ID, 'follow_users', $id, 'remove');
+
+        //博主id中删除粉丝id
+        manage_meta_info('user', $id, 'followers', $current_user->data->ID, 'remove');
+
+        $result['code'] = 1;
+        $result['message'] = "取消关注";
+        
+    }
+    else{
+        $result['code'] = 200;
+        $result['message'] = "参数错误";
+    }
+    
+    return $result;
+}
 
 //初始化REST
 
@@ -502,6 +580,25 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'wp/v2', '/collects', array(
         'methods' => 'POST',
         'callback' => 'collect_func',
+        'permission_callback' => function () {
+                return is_user_logged_in();
+        },
+    ) );
+
+} );
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'wp/v2', '/follows', array(
+        'methods' => 'GET',
+        'callback' => 'get_follows_func',
+        'permission_callback' => function () {
+                return is_user_logged_in();
+        },
+    ) );
+
+    register_rest_route( 'wp/v2', '/follows', array(
+        'methods' => 'POST',
+        'callback' => 'follow_func',
         'permission_callback' => function () {
                 return is_user_logged_in();
         },
