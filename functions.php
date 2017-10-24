@@ -464,9 +464,13 @@ function post_add_info() {
 }
 
 function get_user_avatar_info($user_arr) {
+    global $table_prefix;
+
     $avatar_info = array();
 
-    $avatar_id = get_user_meta($user_arr['id'], "ct_user_avatar", true);
+    $avatar_fild_name = $table_prefix . "user_avatar";
+
+    $avatar_id = get_user_meta($user_arr['id'], $avatar_fild_name, true);
 
     if(!empty($avatar_id)) {
         $avater_attachment = wp_get_attachment_image_src( $avatar_id, 'full' );
@@ -477,12 +481,14 @@ function get_user_avatar_info($user_arr) {
         }
         else {
             $avatar_info['code'] = 100;
-            $avatar_info['url'] = '头像附件不存在';
+            $avatar_info['url'] = '';
+            $avatar_info['msg'] = '头像附件不存在';
         }
     }
     else {
         $avatar_info['code'] = 101;
-        $avatar_info['url'] = '没有设置头像';
+        $avatar_info['url'] = '';
+        $avatar_info['msg'] = '没有设置头像';
     }
 
     return $avatar_info;
