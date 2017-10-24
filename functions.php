@@ -469,7 +469,7 @@ function get_user_avatar_info($user_arr) {
     $avatar_id = get_user_meta($user_arr['id'], "ct_user_avatar", true);
 
     if(!empty($avatar_id)) {
-        $avater_attachment = wp_get_attachment_image_src( $avatar_id, 'medium' );
+        $avater_attachment = wp_get_attachment_image_src( $avatar_id, 'full' );
 
         if($avater_attachment) {
             $avatar_info['code'] = 0;
