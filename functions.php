@@ -494,9 +494,39 @@ function get_user_avatar_info($user_arr) {
     return $avatar_info;
 }
 
+function get_user_follow_info($user_arr) {
+    global $current_user;
+
+    $follow_info = array();
+
+    if(is_user_logged_in()) { //若已登录
+
+        $follow_field_name = "followers";
+
+        $followers_arr = get_user_meta($user_arr['id'], $follow_field_name, true);
+        $followers_arr = !empty($followers_arr) ? maybe_unserialize($followers_arr) : array();
+
+        if(in_array($current_user->data->ID, $followers_arr)) {
+            return true;
+        }else {
+            return false;
+        }
+
+    }
+    else {
+        return -1;
+    }
+    
+}
+
 function user_add_avatar() {
     register_rest_field( 'user', 'avatar', array(
         'get_callback' => 'get_user_avatar_info',
+        'schema' => null,
+    ) );
+
+    register_rest_field( 'user', 'is_follow', array(
+        'get_callback' => 'get_user_follow_info',
         'schema' => null,
     ) );
 }
