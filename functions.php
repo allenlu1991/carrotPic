@@ -519,7 +519,6 @@ function get_user_follow_info($user_arr) {
     
 }
 
-
 function user_add_avatar() {
     register_rest_field( 'user', 'avatar', array(
         'get_callback' => 'get_user_avatar_info',
