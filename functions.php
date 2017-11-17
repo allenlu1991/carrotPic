@@ -436,6 +436,8 @@ function collect_func(){
 }
 
 function get_post_meta_info($post_arr) {
+    global $current_user;
+
     $meta_info = array();
     $picture_urls = array();
 
@@ -452,6 +454,22 @@ function get_post_meta_info($post_arr) {
     $meta_info['pictures_num'] = count($media_info);
 
     $meta_info['pictures_url'] = $picture_urls;
+
+    if(is_user_logged_in()) { //若已登录
+
+        $like_users_arr = get_post_meta($post_arr['id'], 'like_users', true);
+        $like_users_arr = !empty($like_users_arr) ? maybe_unserialize($like_users_arr) : array();
+
+        if(in_array($current_user->data->ID, $like_users_arr)) {
+            $meta_info['is_like'] = true;
+        }else {
+            $meta_info['is_like'] = false;
+        }
+
+    }
+    else {
+        $meta_info['is_like'] = -1;
+    }
 
     return $meta_info;
 }
