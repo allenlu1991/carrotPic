@@ -460,15 +460,25 @@ function get_post_meta_info($post_arr) {
         $like_users_arr = get_post_meta($post_arr['id'], 'like_users', true);
         $like_users_arr = !empty($like_users_arr) ? maybe_unserialize($like_users_arr) : array();
 
+        $collect_users_arr = get_post_meta($post_arr['id'], 'collect_users', true);
+        $collect_users_arr = !empty($collect_users_arr) ? maybe_unserialize($collect_users_arr) : array();
+
         if(in_array($current_user->data->ID, $like_users_arr)) {
             $meta_info['is_like'] = true;
         }else {
             $meta_info['is_like'] = false;
         }
 
+        if(in_array($current_user->data->ID, $collect_users_arr)) {
+            $meta_info['is_collect'] = true;
+        }else {
+            $meta_info['is_collect'] = false;
+        }
+
     }
     else {
         $meta_info['is_like'] = -1;
+        $meta_info['is_collect'] = -1;
     }
 
     return $meta_info;
