@@ -547,6 +547,10 @@ function get_user_follow_info($user_arr) {
     
 }
 
+function get_photos_num($user_arr) {
+    return count_user_posts($user_arr['id']);
+}
+
 function user_add_avatar() {
     register_rest_field( 'user', 'avatar', array(
         'get_callback' => 'get_user_avatar_info',
@@ -555,6 +559,11 @@ function user_add_avatar() {
 
     register_rest_field( 'user', 'is_follow', array(
         'get_callback' => 'get_user_follow_info',
+        'schema' => null,
+    ) );
+
+    register_rest_field( 'user', 'photos_num', array(
+        'get_callback' => 'get_photos_num',
         'schema' => null,
     ) );
 }
