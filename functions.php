@@ -404,7 +404,7 @@ function collect_func(){
 
         if ( empty($collect_users) || !in_array($current_user->data->ID, $collect_users) ) {
 
-            $result['code'] = 100;
+            $result['code'] = 101;
             $result['message'] = "没有收藏该内容";
 
         }
@@ -422,7 +422,7 @@ function collect_func(){
             //更新user_meta表
             user_collects_info_update($current_user->data->ID, $id, 'remove');
 
-            $result['code'] = 0;
+            $result['code'] = 1;
             $result['message'] = "取消收藏";
         }
 
