@@ -94,6 +94,7 @@ function script_parameter(){
 /**                                         主题核心代码.end                                            **/
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 /* 处理REST API
 /* ----------------------------- */
 
@@ -444,10 +445,14 @@ function get_post_meta_info($post_arr) {
     $like_nums = get_post_meta($post_arr['id'], "like_num", true);
     $like_nums = !empty($like_nums) ? $like_nums : 0;
 
-    $media_info = get_attached_media( 'image', $post_arr['id']);
+    //$media_info = get_attached_media( 'image', $post_arr['id']);
+    $media_info = get_post_gallery_images($post_arr['id']);
+    //var_dump($media_info);
 
     foreach ($media_info as $key => $obj) {
-        $picture_urls[] = $obj->guid;
+       // $picture_urls[] = $obj->guid;
+       $obj = explode("?", $obj);
+       $picture_urls[] = $obj[0];
     }
 
     $meta_info['like_num'] = (int) $like_nums;
