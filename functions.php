@@ -180,7 +180,7 @@ function get_configs_func($data) {
         $configs = get_post_meta($my_config[0]->ID);
 
         $result = array(
-            'id' => $data['id'],
+            'id' => $my_config[0]->ID,
             'configs' => $configs
         );
     } else {
