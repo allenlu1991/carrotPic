@@ -165,13 +165,30 @@ function user_register_func(WP_REST_Request $request) {
 }
 
 function get_configs_func($data) {
+    $slug = $data['slug'];
 
-    $configs = get_post_meta($data['id']);
-            
-    $result = array(
-        'id' => $data['id'],
-        'configs' => $configs
+    $args = array(
+        'name'             => $slug,
+        'post_type'        => 'config_type',
+        'post_status'      => 'publish',
+        'posts_per_page'   => 1
     );
+
+    $my_config = get_posts($args);
+
+    if($my_config) {
+        $configs = get_post_meta($my_config[0]->ID);
+
+        $result = array(
+            'id' => $data['id'],
+            'configs' => $configs
+        );
+    } else {
+        $result = array(
+            'id' => null,
+            'configs' => null
+        );
+    }
 
     return $result;
 }
@@ -646,16 +663,9 @@ add_action( 'rest_api_init', function () {
 访问路径：/wp-json/wp/v2/configs
 */
 add_action( 'rest_api_init', function () {
-    register_rest_route( 'wp/v2', '/configs/(?P<id>\d+)', array(
+    register_rest_route( 'wp/v2', '/configs/(?P<slug>[a-zA-Z0-9-_]+)', array(
         'methods' => 'GET',
-        'callback' => 'get_configs_func',
-        'args' => array(
-            'id' => array(
-                'validate_callback' => function($param, $request, $key) {
-                    return is_numeric( $param );
-                }
-            ),     
-        )
+        'callback' => 'get_configs_func'
     ));
 });
 
