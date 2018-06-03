@@ -164,6 +164,18 @@ function user_register_func(WP_REST_Request $request) {
     return $result;
 }
 
+function get_configs_func($data) {
+
+    $configs = get_post_meta($data['id']);
+            
+    $result = array(
+        'id' => $data['id'],
+        'configs' => $configs
+    );
+
+    return $result;
+}
+
 function get_slides_func() {
     //全局变量必须声明
     global $post;
@@ -629,6 +641,28 @@ add_action( 'rest_api_init', function () {
   ) );
 } );
 
+/*
+获取应用配置
+访问路径：/wp-json/wp/v2/configs
+*/
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'wp/v2', '/configs/(?P<id>\d+)', array(
+        'methods' => 'GET',
+        'callback' => 'get_configs_func',
+        'args' => array(
+            'id' => array(
+                'validate_callback' => function($param, $request, $key) {
+                    return is_numeric( $param );
+                }
+            ),     
+        )
+    ));
+});
+
+/*
+获取轮播图
+访问路径：/wp-json/wp/v2/slides
+*/
 add_action( 'rest_api_init', function () {
   register_rest_route( 'wp/v2', '/slides', array(
     'methods' => 'GET',
@@ -1307,6 +1341,32 @@ register_nav_menus(
       'mini-nav' => __( '移动版菜单' )
    )
 );
+
+/* 系统配置模块
+/* -------------------------------- */
+function config_post_type() {
+    $labels = array(
+        'name' => '应用配置',
+        'singular_name' => '应用配置',
+        'add_new' => '添加',
+        'add_new_item' => '添加新配置',
+        'edit_item' => '编辑配置',
+        'new_item' => '新配置'
+    );
+
+    $args = array(
+        'labels' => $labels,   
+        'public' => true,
+        'has_archive' => false, //是否开启存档功能
+        'exclude_from_search' => true,
+        'menu_position' => 9,
+        'supports' => array('title','custom-fields','author','revisions') //编辑框包含哪些核心支持功能
+    );
+
+    register_post_type('config_type', $args);
+}
+
+add_action('init', 'config_post_type');
 
 /* 轮播图模块
 /* -------------------------------- */
